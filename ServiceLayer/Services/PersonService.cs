@@ -1,13 +1,17 @@
-﻿using EntityLayer.DTOs.Persons;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
+using EntityLayer.DTOs.Persons;
 using EntityLayer.Entities;
 using EntityLayer.Enums;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using ServiceLayer.Context;
 using ServiceLayer.Helpers;
 using ServiceLayer.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -27,17 +31,17 @@ namespace ServiceLayer.Services
 			this.countryService = countryService ?? throw new ArgumentNullException(nameof(countryService));
 		}
 
-		
 
-		
+
+
 		public async Task<PersonResponse> AddPerson(PersonAddRequest? request)
 		{
 			if (request == null) throw new ArgumentNullException(nameof(request));
 			ValidationHelper.ModelValidation(request);
 			Person person = request.ToPerson();
 			person.Id = Guid.NewGuid();
-			
-			 context.Persons.Add(person);
+
+			context.Persons.Add(person);
 			await context.SaveChangesAsync();
 
 			//context.sp_addPerson(person);
@@ -56,14 +60,14 @@ namespace ServiceLayer.Services
 		public async Task<PersonResponse> GetPersonById(Guid? id)
 		{
 			if (id == null) return null;
-			Person? person =await context.Persons.Include(p=>p.Country).FirstOrDefaultAsync(x => x.Id == id);
+			Person? person = await context.Persons.Include(p => p.Country).FirstOrDefaultAsync(x => x.Id == id);
 			if (person == null) return null;
 			return person.ToPersonResponse();
 		}
 
 		public async Task<List<PersonResponse>> GetFilteredPersons(string searchBy, string? searchString)
 		{
-			List<PersonResponse> allPersons =await GetAllPersons();
+			List<PersonResponse> allPersons = await GetAllPersons();
 			List<PersonResponse> filteredPerson = allPersons;
 			if (string.IsNullOrEmpty(searchString) || string.IsNullOrEmpty(searchBy))
 				return filteredPerson;
@@ -140,7 +144,7 @@ namespace ServiceLayer.Services
 		{
 			if (request == null) throw new ArgumentNullException(nameof(request));
 			ValidationHelper.ModelValidation(request);
-			Person? person =await context.Persons.FirstOrDefaultAsync(p => p.Id == request.Id);
+			Person? person = await context.Persons.FirstOrDefaultAsync(p => p.Id == request.Id);
 			if (person == null) throw new ArgumentNullException(nameof(person));
 			person.Name = request.Name;
 			person.Email = request.Email;
@@ -155,9 +159,9 @@ namespace ServiceLayer.Services
 			}
 			catch (Exception ex)
 			{
-				
+
 				Console.WriteLine($"Error: {ex.Message}");
-				
+
 			}
 			return person.ToPersonResponse();
 		}
@@ -165,11 +169,87 @@ namespace ServiceLayer.Services
 		public async Task<bool> DeletePerson(Guid? personId)
 		{
 			if (personId == null) throw new ArgumentNullException(nameof(personId));
-			Person person =await context.Persons.Include(p=>p.Country).FirstOrDefaultAsync(p => p.Id == personId);
+			Person person = await context.Persons.Include(p => p.Country).FirstOrDefaultAsync(p => p.Id == personId);
 			if (person == null) return false;
 			var deleted = context.Persons.Remove(person);
 			await context.SaveChangesAsync();
 			return true;
+		}
+
+		public async Task<MemoryStream> GetPersonsCSV()
+		{
+			MemoryStream memoryStream = new MemoryStream();
+			StreamWriter writer = new StreamWriter(memoryStream);
+			CsvConfiguration csvConfiguration = new CsvConfiguration(CultureInfo.InvariantCulture);
+			CsvWriter csvWriter = new CsvWriter(writer, csvConfiguration);
+
+			csvWriter.WriteField(nameof(PersonResponse.Id));
+			csvWriter.WriteField(nameof(PersonResponse.Name));
+			csvWriter.WriteField(nameof(PersonResponse.Email));
+			csvWriter.WriteField(nameof(PersonResponse.BirthDate));
+			csvWriter.WriteField(nameof(PersonResponse.Age));
+			csvWriter.WriteField(nameof(PersonResponse.Gender));
+			csvWriter.WriteField(nameof(PersonResponse.Country));
+			csvWriter.WriteField(nameof(PersonResponse.Address));
+			csvWriter.WriteField(nameof(PersonResponse.ReceiveNewsLetters));
+			csvWriter.NextRecord();
+			csvWriter.Flush();
+			var persons = context.Persons.Include(p => p.Country).Select(p => p.ToPersonResponse()).ToList();
+			foreach (var person in persons)
+			{
+				csvWriter.WriteField(person.Id);
+				csvWriter.WriteField(person.Name);
+				csvWriter.WriteField(person.Email);
+				if (person.BirthDate != null)
+					csvWriter.WriteField(person.BirthDate.Value.ToString("yyyy-MM-dd"));
+				csvWriter.WriteField(person.Age);
+				csvWriter.WriteField(person.Gender);
+				csvWriter.WriteField(person.Country);
+				csvWriter.WriteField(person.Address);
+				csvWriter.WriteField(person.ReceiveNewsLetters);
+				csvWriter.NextRecord();
+				csvWriter.Flush();
+
+			}
+			//await csvWriter.WriteRecordsAsync(persons);
+			memoryStream.Position = 0;
+			return memoryStream;
+		}
+
+		public async Task<MemoryStream> GetPersonsExcel()
+		{
+			MemoryStream stream = new MemoryStream();
+			using (ExcelPackage package = new ExcelPackage(stream))
+			{
+				ExcelWorksheet worksheet = package.Workbook.Worksheets.Add("PersonsSheet");
+				worksheet.Cells["A1"].Value = "Name";
+				worksheet.Cells["B1"].Value = "Email";
+				worksheet.Cells["C1"].Value = "Birth Data";
+				worksheet.Cells["D1"].Value = "Age";
+				worksheet.Cells["E1"].Value = "Gender";
+				worksheet.Cells["F1"].Value = "Country";
+				worksheet.Cells["G1"].Value = "Address";
+				worksheet.Cells["H1"].Value = "Receive News Letters";
+				int row = 2;
+				var responses = context.Persons.Include(p => p.Country).Select(p => p.ToPersonResponse()).ToList();
+				foreach(var response in responses)
+				{
+					worksheet.Cells[row, 1].Value = response.Name;
+					worksheet.Cells[row, 2].Value = response.Email;
+					worksheet.Cells[row, 3].Value = response.BirthDate.Value.ToString("yyyy-MM-dd");
+					worksheet.Cells[row, 4].Value = response.Age;
+					worksheet.Cells[row, 5].Value = response.Gender;
+					worksheet.Cells[row, 6].Value = response.Country;
+					worksheet.Cells[row, 7].Value = response.Address;
+					worksheet.Cells[row, 8].Value = response.ReceiveNewsLetters;
+					row++;
+				}
+
+				worksheet.Cells[$"A1:H{row}"].AutoFitColumns();
+				await package.SaveAsync();
+			}
+			stream.Position= 0;
+			return stream;
 		}
 	}
 }

@@ -17,5 +17,7 @@ namespace ServiceLayer.Interfaces
 		Task<List<PersonResponse>> GetSortedPersons(List<PersonResponse> persons,string sortBy, SortOrderOptions sortOrder);
 		Task<PersonResponse> UpdatePerson(PersonUpdateRequest? request);
 		Task<bool> DeletePerson(Guid? personId);
+		Task<MemoryStream> GetPersonsCSV();
+		Task<MemoryStream> GetPersonsExcel();
 	}
 }

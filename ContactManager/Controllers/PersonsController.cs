@@ -2,6 +2,8 @@
 using EntityLayer.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Rotativa.AspNetCore;
+using Rotativa.AspNetCore.Options;
 using ServiceLayer.Interfaces;
 
 namespace ContactManager.Controllers
@@ -31,8 +33,8 @@ namespace ContactManager.Controllers
 			};
 			ViewBag.sb = searchBy;
 			ViewBag.ss = searchString;
-			List<PersonResponse> responses =await _personService.GetFilteredPersons(searchBy, searchString);
-			List<PersonResponse> sortedPersons =await _personService.GetSortedPersons(responses, sortBy, sortOrder);
+			List<PersonResponse> responses = await _personService.GetFilteredPersons(searchBy, searchString);
+			List<PersonResponse> sortedPersons = await _personService.GetSortedPersons(responses, sortBy, sortOrder);
 			ViewBag.sortBy = sortBy;
 			ViewBag.sortOrder = sortOrder.ToString();
 			return View(sortedPersons);
@@ -41,7 +43,7 @@ namespace ContactManager.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Create()
 		{
-			var countries =await _countryService.GetAllCountries();
+			var countries = await _countryService.GetAllCountries();
 			ViewBag.Countries = countries.Select(c =>
 			new SelectListItem { Text = c.Name, Value = c.Id.ToString() }).ToList();
 			return View();
@@ -52,7 +54,7 @@ namespace ContactManager.Controllers
 		{
 			if (!ModelState.IsValid)
 			{
-				ViewBag.Countries =await _countryService.GetAllCountries();
+				ViewBag.Countries = await _countryService.GetAllCountries();
 				ViewBag.Errors = ModelState.Values.SelectMany(x => x.Errors).SelectMany(x => x.ErrorMessage).ToList();
 				return View();
 			}
@@ -63,10 +65,10 @@ namespace ContactManager.Controllers
 		[Route("persons/edit/{Id}")]
 		public async Task<IActionResult> Edit(Guid Id)
 		{
-			var countries =await _countryService.GetAllCountries();
+			var countries = await _countryService.GetAllCountries();
 			ViewBag.Countries = countries.Select(c =>
 			new SelectListItem { Text = c.Name, Value = c.Id.ToString() }).ToList();
-			var result =await _personService.GetPersonById(Id);
+			var result = await _personService.GetPersonById(Id);
 			PersonUpdateRequest request = result.ToPersonUpdateRequest();
 			return View(request);
 		}
@@ -74,30 +76,30 @@ namespace ContactManager.Controllers
 		[Route("persons/edit/{Id}")]
 		public async Task<IActionResult> Edit(PersonUpdateRequest request)
 		{
-			PersonResponse person=await _personService.GetPersonById(request.Id);
+			PersonResponse person = await _personService.GetPersonById(request.Id);
 			if (person == null)
 			{
 				return RedirectToAction("Index");
 			}
 			if (!ModelState.IsValid)
 			{
-				var countries =await _countryService.GetAllCountries();
+				var countries = await _countryService.GetAllCountries();
 				ViewBag.Countries = countries.Select(c =>
 				new SelectListItem { Text = c.Name, Value = c.Id.ToString() }).ToList();
-				var result =await _personService.GetPersonById(request.Id);
+				var result = await _personService.GetPersonById(request.Id);
 				PersonUpdateRequest req = result.ToPersonUpdateRequest();
 				return View(request);
 
 			}
-			var updatedResult = _personService.UpdatePerson(request);
+			var updatedResult = await _personService.UpdatePerson(request);
 			return RedirectToAction("Index");
 		}
 		[HttpGet]
 		[Route("persons/delete/{Id}")]
 		public async Task<IActionResult> Delete(Guid Id)
 		{
-			var response =await _personService.GetPersonById(Id);
-			if(response == null)
+			var response = await _personService.GetPersonById(Id);
+			if (response == null)
 			{
 				return RedirectToAction("Index");
 			}
@@ -113,6 +115,28 @@ namespace ContactManager.Controllers
 			}
 			await _personService.DeletePerson(person.Id);
 			return RedirectToAction("Index");
+		}
+		[Route("persons/personsPDF")]
+		public async Task<IActionResult> PersonsPDF()
+		{
+			List<PersonResponse> people = await _personService.GetAllPersons();
+			return new ViewAsPdf("PersonsPDF", people, ViewData)
+			{
+				PageMargins = new Margins { Bottom = 20, Top = 20, Right = 20, Left = 20 },
+				PageOrientation = Orientation.Landscape
+			};
+		}
+		[Route("persons/personsCSV")]
+		public async Task<IActionResult> PersonsCSV()
+		{
+			var memory = await _personService.GetPersonsCSV();
+			return File(memory, "application/octet-stream", "persons.csv");
+		}
+		[Route("persons/personsExcel")]
+		public async Task<IActionResult> PersonsExcel()
+		{
+			var memory = await _personService.GetPersonsExcel();
+			return File(memory, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "persons.xlsx");
 		}
 	}
 }

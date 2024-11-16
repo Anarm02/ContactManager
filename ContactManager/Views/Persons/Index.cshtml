@@ -4,6 +4,10 @@
 }
 <h1>Persons</h1>
 <a asp-controller="Persons" asp-action="Create">Create Person</a>
+<a asp-controller="Persons" asp-action="PersonsPDF" class="ml">Download as PDF</a>
+<a asp-controller="Persons" asp-action="PersonsCSV" class="ml">Download as CSV</a>
+<a asp-controller="Persons" asp-action="PersonsExcel" class="ml">Download as Excel</a>
+
 <form asp-controller="Persons" asp-action="index" method="get">
     <div class="box flex">
         <div class="flex-1">
@@ -74,7 +78,7 @@
                 { "ColumnName", nameof(PersonResponse.ReceiveNewsLetters) },
                 { "DisplayName", "Receive News Letters" },
                 })
-                
+
                 <th>Options</th>
             </tr>
         </thead>

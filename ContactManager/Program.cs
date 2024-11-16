@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Rotativa.AspNetCore;
 using ServiceLayer.Context;
 using ServiceLayer.Interfaces;
 using ServiceLayer.Services;
@@ -21,6 +22,7 @@ namespace ContactManager
 			var app = builder.Build();
 			if(app.Environment.IsDevelopment())
 				app.UseDeveloperExceptionPage();
+			RotativaConfiguration.Setup("wwwroot", wkhtmltopdfRelativePath: "Rotativa");
 			app.UseStaticFiles();
 			app.UseRouting();
 			app.MapControllers();

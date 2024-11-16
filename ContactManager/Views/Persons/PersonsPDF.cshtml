@@ -1,0 +1,35 @@
+﻿@model List<PersonResponse>
+@{
+    Layout = null;
+}
+<link href="@("http://" + Context.Request.Host.ToString() + "/StyleSheet.css")" rel="stylesheet" />
+<h1>Persons</h1>
+<table class="table w-100 mt">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Birth date</th>
+            <th>Age</th>
+            <th>Gender</th>
+            <th>Country</th>
+            <th>Address</th>
+            <th>Receive news letters</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Email</td>
+                <td>@item.BirthDate?.ToString("dd MMMM yy")</td>
+                <td>@item.Age</td>
+                <td>@item.Gender</td>
+                <td>@item.Country</td>
+                <td>@item.Address</td>
+                <td>@item.ReceiveNewsLetters</td>
+            </tr>
+        }
+    </tbody>
+</table>
