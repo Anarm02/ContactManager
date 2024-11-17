@@ -1,4 +1,5 @@
 ﻿using EntityLayer.DTOs.Countries;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,5 +13,6 @@ namespace ServiceLayer.Interfaces
 		Task<CountryAddResponse> AddCountry(CountryAddRequest request);
 		Task<List<CountryAddResponse>> GetAllCountries();
 		Task<CountryAddResponse?> GetCountry(Guid? countryId);
+		Task<int> UploadFromExcel(IFormFile file);
 	}
 }

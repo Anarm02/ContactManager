@@ -1,6 +1,8 @@
 ﻿using EntityLayer.DTOs.Countries;
 using EntityLayer.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using ServiceLayer.Context;
 using ServiceLayer.Interfaces;
 using System;
@@ -13,7 +15,7 @@ namespace ServiceLayer.Services
 {
 	public class CountryService : ICountryService
 	{
-	
+
 		private readonly AppDbContext context;
 
 		public CountryService()
@@ -25,14 +27,14 @@ namespace ServiceLayer.Services
 			this.context = context;
 		}
 
-		
+
 		public async Task<CountryAddResponse> AddCountry(CountryAddRequest request)
 		{
 			if (request == null)
 				throw new ArgumentNullException(nameof(request));
 			else if (request.Name == null)
 				throw new ArgumentException(nameof(request.Name));
-			if (await context.Countries.AnyAsync(c=>c.Name==request.Name))
+			if (await context.Countries.AnyAsync(c => c.Name == request.Name))
 				throw new ArgumentException(nameof(request.Name));
 			Country country = request.ToCountry();
 			country.Id = Guid.NewGuid();
@@ -51,10 +53,34 @@ namespace ServiceLayer.Services
 		{
 			if (countryId == null)
 				return null;
-			Country country =await context.Countries?.FirstOrDefaultAsync(c => c.Id == countryId);
+			Country country = await context.Countries?.FirstOrDefaultAsync(c => c.Id == countryId);
 			if (country == null)
 				return null;
 			return country.ToCountryResponse();
+		}
+
+		public async Task<int> UploadFromExcel(IFormFile file)
+		{
+			MemoryStream memoryStream = new MemoryStream();
+			await file.CopyToAsync(memoryStream);
+			int addedCountryCount = 0;
+			using (ExcelPackage package = new ExcelPackage(memoryStream))
+			{
+				ExcelWorksheet sheet = package.Workbook.Worksheets["Countries"];
+				int rowcount = sheet.Dimension.Rows;
+				for (int i = 2; i <= rowcount; i++)
+				{
+					string? countryname = sheet.Cells[i, 1].Value.ToString();
+					if (!string.IsNullOrWhiteSpace(countryname) && context.Countries.Where(c => c.Name == countryname).Count() == 0)
+					{
+						Country country = new Country() { Name = countryname };
+						await context.Countries.AddAsync(country);
+						await context.SaveChangesAsync();
+						addedCountryCount++;
+					}
+				}
+			}
+			return addedCountryCount;
 		}
 	}
 }
