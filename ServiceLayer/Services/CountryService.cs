@@ -53,7 +53,7 @@ namespace ServiceLayer.Services
 		{
 			if (countryId == null)
 				return null;
-			Country country = await context.Countries?.FirstOrDefaultAsync(c => c.Id == countryId);
+			Country? country = await context.Countries?.FirstOrDefaultAsync(c => c.Id == countryId);
 			if (country == null)
 				return null;
 			return country.ToCountryResponse();

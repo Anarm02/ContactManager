@@ -1,4 +1,9 @@
-﻿using EntityLayer.DTOs.Countries;
+﻿using AutoFixture;
+using EntityFrameworkCoreMock;
+using EntityLayer.DTOs.Countries;
+using EntityLayer.Entities;
+using Microsoft.EntityFrameworkCore;
+using ServiceLayer.Context;
 using ServiceLayer.Interfaces;
 using ServiceLayer.Services;
 using System;
@@ -12,10 +17,15 @@ namespace ContactManagerTest
 	public class CountryServiceTest
 	{
 		private readonly ICountryService _countryService;
-
+		private readonly IFixture _fixture;
 		public CountryServiceTest()
 		{
-			_countryService = new CountryService();
+			_fixture = new Fixture();
+			var initialCountries = new List<Country>() { };
+			DbContextMock<AppDbContext> mockDB = new DbContextMock<AppDbContext>(new DbContextOptionsBuilder<AppDbContext>().Options);	
+			var context=mockDB.Object;
+			mockDB.CreateDbSetMock(c=>c.Countries,initialCountries);
+			_countryService = new CountryService(context);
 		}
 		#region AddCountry
 		[Fact]
@@ -30,7 +40,7 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task CountryNameNullRequest()
 		{
-			CountryAddRequest request=new CountryAddRequest() { Name=null};
+			CountryAddRequest request=_fixture.Build<CountryAddRequest>().With(c=>c.Name,null as string).Create();
 			await Assert.ThrowsAsync<ArgumentException>(async () =>
 			{
 				await _countryService.AddCountry(request);
@@ -39,8 +49,12 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task CountryNameDuplicateRequest()
 		{
-			CountryAddRequest request = new CountryAddRequest() { Name = "USA" };
-			CountryAddRequest request1 = new CountryAddRequest() { Name = "USA" };
+			CountryAddRequest request = _fixture.Build<CountryAddRequest>()
+				.With(c=>c.Name,"USA")
+				.Create();
+			CountryAddRequest request1 = _fixture.Build<CountryAddRequest>()
+				.With(c => c.Name, "USA")
+				.Create();
 			await Assert.ThrowsAsync<ArgumentException>(async () =>
 			{
 				await _countryService.AddCountry(request);
@@ -50,7 +64,7 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task ProperCountry()
 		{
-			CountryAddRequest request=new CountryAddRequest() { Name="japan"};
+			CountryAddRequest request=_fixture.Create<CountryAddRequest>();
 			CountryAddResponse response=await _countryService.AddCountry(request);
 			List<CountryAddResponse> responses= await _countryService.GetAllCountries();
 			Assert.True(response.Id!=Guid.Empty);
@@ -66,9 +80,10 @@ namespace ContactManagerTest
 		}
 		[Fact]
 		public async Task GetAllCountry_Proper() {
+			var request1 = _fixture.Create<CountryAddRequest>();
+			var request2 = _fixture.Create<CountryAddRequest>();
 			List<CountryAddRequest> requests=new List<CountryAddRequest>() {
-			new CountryAddRequest(){Name="USA"},
-			new CountryAddRequest(){Name="UK"}
+			request1,request2
 			};
 			List<CountryAddResponse> responses=new List<CountryAddResponse>();
 			foreach (CountryAddRequest request in requests) {
@@ -92,7 +107,7 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task GetCountry_Proper()
 		{
-			CountryAddRequest request=new CountryAddRequest() {Name="Japan" };
+			CountryAddRequest request=_fixture.Create<CountryAddRequest>();
 			CountryAddResponse response =await _countryService.AddCountry(request);
 			CountryAddResponse response1 =await _countryService.GetCountry(response.Id);
 			Assert.Equal(response,response1);

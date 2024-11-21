@@ -16,8 +16,8 @@ namespace ServiceLayer.Context
         {
             
         }
-        public DbSet<Person> Persons { get; set; }
-		public DbSet<Country> Countries { get; set; }
+        public virtual DbSet<Person> Persons { get; set; }
+		public virtual DbSet<Country> Countries { get; set; }
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
 			base.OnModelCreating(modelBuilder);
