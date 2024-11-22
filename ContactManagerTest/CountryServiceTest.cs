@@ -3,9 +3,9 @@ using EntityFrameworkCoreMock;
 using EntityLayer.DTOs.Countries;
 using EntityLayer.Entities;
 using Microsoft.EntityFrameworkCore;
-using ServiceLayer.Context;
-using ServiceLayer.Interfaces;
-using ServiceLayer.Services;
+using DataLayer.Context;
+using DataLayer.Interfaces;
+using DataLayer.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,7 +25,7 @@ namespace ContactManagerTest
 			DbContextMock<AppDbContext> mockDB = new DbContextMock<AppDbContext>(new DbContextOptionsBuilder<AppDbContext>().Options);	
 			var context=mockDB.Object;
 			mockDB.CreateDbSetMock(c=>c.Countries,initialCountries);
-			_countryService = new CountryService(context);
+			_countryService = new CountryService(null);
 		}
 		#region AddCountry
 		[Fact]

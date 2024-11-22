@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
-using ServiceLayer.Interfaces;
+using DataLayer.Interfaces;
 
 namespace ContactManager.Controllers
 {

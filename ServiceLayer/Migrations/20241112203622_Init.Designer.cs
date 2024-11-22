@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using ServiceLayer.Context;
+using DataLayer.Context;
 
 #nullable disable
 
-namespace ServiceLayer.Migrations
+namespace DataLayer.Migrations
 {
     [DbContext(typeof(AppDbContext))]
     [Migration("20241112203622_Init")]

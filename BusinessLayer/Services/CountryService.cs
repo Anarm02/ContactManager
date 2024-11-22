@@ -3,28 +3,29 @@ using EntityLayer.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using OfficeOpenXml;
-using ServiceLayer.Context;
-using ServiceLayer.Interfaces;
+using DataLayer.Context;
+using DataLayer.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Services
+namespace DataLayer.Services
 {
 	public class CountryService : ICountryService
 	{
 
-		private readonly AppDbContext context;
+		private readonly ICountryRepository _repository;
 
 		public CountryService()
 		{
 		}
 
-		public CountryService(AppDbContext context)
+		public CountryService( ICountryRepository repository )
 		{
-			this.context = context;
+			
+			_repository = repository;
 		}
 
 
@@ -34,26 +35,26 @@ namespace ServiceLayer.Services
 				throw new ArgumentNullException(nameof(request));
 			else if (request.Name == null)
 				throw new ArgumentException(nameof(request.Name));
-			if (await context.Countries.AnyAsync(c => c.Name == request.Name))
-				throw new ArgumentException(nameof(request.Name));
+			if (await _repository.GetCountryByName(request.Name)!=null)
+				throw new ArgumentException("Country already exist");
 			Country country = request.ToCountry();
 			country.Id = Guid.NewGuid();
-			await context.AddAsync(country);
-			await context.SaveChangesAsync();
+			await _repository.AddCountry(country);
 			return country.ToCountryResponse();
 
 		}
 
 		public async Task<List<CountryAddResponse>> GetAllCountries()
 		{
-			return await context.Countries.Select(country => country.ToCountryResponse()).ToListAsync();
+			var countries = await _repository.GetAllCountries();
+			return countries.Select(country => country.ToCountryResponse()).ToList();
 		}
 
 		public async Task<CountryAddResponse?> GetCountry(Guid? countryId)
 		{
 			if (countryId == null)
 				return null;
-			Country? country = await context.Countries?.FirstOrDefaultAsync(c => c.Id == countryId);
+			Country? country = await _repository.GetCountryById(countryId);
 			if (country == null)
 				return null;
 			return country.ToCountryResponse();
@@ -68,14 +69,14 @@ namespace ServiceLayer.Services
 			{
 				ExcelWorksheet sheet = package.Workbook.Worksheets["Countries"];
 				int rowcount = sheet.Dimension.Rows;
+				
 				for (int i = 2; i <= rowcount; i++)
 				{
 					string? countryname = sheet.Cells[i, 1].Value.ToString();
-					if (!string.IsNullOrWhiteSpace(countryname) && context.Countries.Where(c => c.Name == countryname).Count() == 0)
+					if (!string.IsNullOrWhiteSpace(countryname) &&  await _repository.GetCountryByName(countryname)!=null)
 					{
 						Country country = new Country() { Name = countryname };
-						await context.Countries.AddAsync(country);
-						await context.SaveChangesAsync();
+						await _repository.AddCountry(country);
 						addedCountryCount++;
 					}
 				}

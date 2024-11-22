@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 
-namespace ServiceLayer.Context
+namespace DataLayer.Context
 {
 	public class AppDbContext:DbContext
 	{

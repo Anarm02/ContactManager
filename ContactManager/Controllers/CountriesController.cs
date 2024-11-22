@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using ServiceLayer.Interfaces;
+using DataLayer.Interfaces;
 
 namespace ContactManager.Controllers
 {

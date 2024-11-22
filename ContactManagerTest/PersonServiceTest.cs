@@ -6,9 +6,9 @@ using EntityLayer.Entities;
 using EntityLayer.Enums;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using ServiceLayer.Context;
-using ServiceLayer.Interfaces;
-using ServiceLayer.Services;
+using DataLayer.Context;
+using DataLayer.Interfaces;
+using DataLayer.Services;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
@@ -34,8 +34,8 @@ namespace ContactManagerTest
 			var context = mockDB.Object;
 			mockDB.CreateDbSetMock(c => c.Countries, initialCountries);
 			mockDB.CreateDbSetMock(c => c.Persons, initialPersons);
-			_countryService = new CountryService(context);
-			_personService = new PersonService(context, _countryService);
+			_countryService = new CountryService(null);
+			_personService = new PersonService(null);
 			_outputHelper = outputHelper;
 		}
 		private async Task<PersonResponse> AddOnePerson(string v)

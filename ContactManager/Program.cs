@@ -1,8 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Rotativa.AspNetCore;
-using ServiceLayer.Context;
-using ServiceLayer.Interfaces;
-using ServiceLayer.Services;
+using DataLayer.Context;
+using DataLayer.Interfaces;
+using DataLayer.Services;
+using DataLayer.Repositories;
 
 namespace ContactManager
 {
@@ -12,6 +13,8 @@ namespace ContactManager
 		{
 			var builder = WebApplication.CreateBuilder(args);
 			builder.Services.AddControllersWithViews();
+			builder.Services.AddScoped<ICountryRepository,CountryRepository>();
+			builder.Services.AddScoped<IPersonRepository,PersonRepository>();
 			builder.Services.AddScoped<ICountryService,CountryService>();
 			builder.Services.AddScoped<IPersonService,PersonService>();
 			builder.Services.AddDbContext<AppDbContext>(opt =>

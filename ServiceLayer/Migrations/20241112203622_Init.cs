@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace ServiceLayer.Migrations
+namespace DataLayer.Migrations
 {
     public partial class Init : Migration
     {
