@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using DataLayer.Interfaces;
+using EntityLayer.DTOs.Countries;
 
 namespace ContactManager.Controllers
 {
@@ -43,7 +44,7 @@ namespace ContactManager.Controllers
 		[HttpGet]
 		public async Task<IActionResult> Create()
 		{
-			var countries = await _countryService.GetAllCountries();
+			List<CountryAddResponse> countries = await _countryService.GetAllCountries();
 			ViewBag.Countries = countries.Select(c =>
 			new SelectListItem { Text = c.Name, Value = c.Id.ToString() }).ToList();
 			return View();
@@ -56,7 +57,7 @@ namespace ContactManager.Controllers
 			{
 				ViewBag.Countries = await _countryService.GetAllCountries();
 				ViewBag.Errors = ModelState.Values.SelectMany(x => x.Errors).SelectMany(x => x.ErrorMessage).ToList();
-				return View();
+				return View(request);
 			}
 			await _personService.AddPerson(request);
 			return RedirectToAction("Index");

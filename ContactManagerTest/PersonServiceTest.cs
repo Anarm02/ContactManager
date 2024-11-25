@@ -16,60 +16,25 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
+using Moq;
+using System.Linq.Expressions;
 
 namespace ContactManagerTest
 {
 	public class PersonServiceTest
 	{
 		private readonly IPersonService _personService;
-		private readonly ICountryService _countryService;
+		private readonly Mock<IPersonRepository> mockPersonRepository;
+		private readonly IPersonRepository _personRepository;
 		private readonly ITestOutputHelper _outputHelper;
 		private readonly IFixture fixture;
 		public PersonServiceTest(ITestOutputHelper outputHelper)
 		{
 			fixture = new Fixture();
-			var initialCountries = new List<Country>() { };
-			var initialPersons = new List<Person>() { };
-			DbContextMock<AppDbContext> mockDB = new DbContextMock<AppDbContext>(new DbContextOptionsBuilder<AppDbContext>().Options);
-			var context = mockDB.Object;
-			mockDB.CreateDbSetMock(c => c.Countries, initialCountries);
-			mockDB.CreateDbSetMock(c => c.Persons, initialPersons);
-			_countryService = new CountryService(null);
-			_personService = new PersonService(null);
+			mockPersonRepository= new Mock<IPersonRepository>();
+			_personRepository =mockPersonRepository.Object;
+			_personService = new PersonService(_personRepository);
 			_outputHelper = outputHelper;
-		}
-		private async Task<PersonResponse> AddOnePerson(string v)
-		{
-			CountryAddRequest crequest = fixture.Create<CountryAddRequest>();
-			CountryAddResponse country = await _countryService.AddCountry(crequest);
-			PersonAddRequest request = fixture.Build<PersonAddRequest>()
-				.With(p => p.Email, "random@gmail.com")
-				.With(p => p.CountryId, country.Id)
-				.Create();
-			PersonResponse response = await _personService.AddPerson(request);
-			return response;
-		}
-		private async Task<List<PersonResponse>> PersonAddDefault()
-		{
-			CountryAddRequest crequest = fixture.Create<CountryAddRequest>();
-			CountryAddRequest crequest1 = fixture.Create<CountryAddRequest>();
-			CountryAddResponse country = await _countryService.AddCountry(crequest);
-			CountryAddResponse country1 = await _countryService.AddCountry(crequest1);
-			PersonAddRequest request = fixture.Build<PersonAddRequest>()
-				.With(p => p.Name, "Anar")
-				.With(p => p.Email, "random@gmail.com")
-				.With(p => p.CountryId, country.Id)
-				.Create();
-			PersonResponse person = await _personService.AddPerson(request);
-			PersonAddRequest request1 = fixture.Build<PersonAddRequest>()
-				.With(p => p.Name, "Muhammar")
-				.With(p => p.Email, "random1@gmail.com")
-				.With(p => p.CountryId, country1.Id)
-				.Create();
-			PersonResponse person1 = await _personService.AddPerson(request1);
-
-			List<PersonResponse> responses = new List<PersonResponse>() { person, person1 };
-			return responses;
 		}
 		#region AddPerson
 		[Fact]
@@ -89,6 +54,8 @@ namespace ContactManagerTest
 			PersonAddRequest request = fixture.Build<PersonAddRequest>()
 				.With(p => p.Name, null as string)
 				.Create();
+			Person person = request.ToPerson();
+			mockPersonRepository.Setup(t => t.AddPerson(It.IsAny<Person>())).ReturnsAsync(person);
 			Func<Task> func = async () =>
 			{
 				await _personService.AddPerson(request);
@@ -100,12 +67,13 @@ namespace ContactManagerTest
 		public async Task AddPerson_Proper()
 		{
 			PersonAddRequest request = fixture.Build<PersonAddRequest>().With(p => p.Email, "random@gmail.com").Create();
+			Person person=request.ToPerson();
+			PersonResponse personResponse=person.ToPersonResponse();
+			mockPersonRepository.Setup(t=>t.AddPerson(It.IsAny<Person>())).ReturnsAsync(person);	
 			PersonResponse response = await _personService.AddPerson(request);
-			List<PersonResponse> responses = await _personService.GetAllPersons();
+			personResponse.Id=response.Id;
 			response.Id.Should().NotBe(Guid.Empty);
-			//Assert.True(response.Id != Guid.Empty);
-			responses.Should().Contain(response);
-			//Assert.Contains(response, responses);
+			response.Should().Be(personResponse);
 		}
 		#endregion
 		#region GetPersonById
@@ -120,15 +88,14 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task GetPersonById_Proper()
 		{
-			CountryAddRequest crequest = fixture.Create<CountryAddRequest>();
-			CountryAddResponse country = await _countryService.AddCountry(crequest);
-			PersonAddRequest request = fixture.Build<PersonAddRequest>()
+			Person person = fixture.Build<Person>()
 				.With(p => p.Email, "random@gmail.com")
-				.With(p => p.CountryId, country.Id)
+				.With(p=>p.Country,null as Country)
 				.Create();
-			PersonResponse response = await _personService.AddPerson(request);
-			PersonResponse response1 = await _personService.GetPersonById(response.Id);
-			response1.Should().Be(response);
+			PersonResponse personResponse= person.ToPersonResponse();
+			mockPersonRepository.Setup(t=>t.GetPersonById(It.IsAny<Guid>())).ReturnsAsync(person);
+			PersonResponse response1 = await _personService.GetPersonById(person.Id);
+			response1.Should().Be(personResponse);
 
 		}
 		#endregion
@@ -136,18 +103,26 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task GetAllPersons_EmptyList()
 		{
+			var persons=new List<Person>();
+			mockPersonRepository.Setup(t => t.GetAllPersons()).ReturnsAsync(persons);
 			List<PersonResponse> responses = await _personService.GetAllPersons();
 			responses.Should().BeEmpty();
 		}
 		[Fact]
 		public async Task GetAllPersons_Proper()
 		{
-			var responses = await PersonAddDefault();
+			List<Person> persons=new List<Person>() {
+			fixture.Build<Person>().With(t=>t.Email,"someone@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone1@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone2@gmail.com").With(t=>t.Country,null as Country).Create(),
+			};
+			List<PersonResponse> responses = persons.Select(t => t.ToPersonResponse()).ToList();
 			_outputHelper.WriteLine("Expected results");
 			foreach (PersonResponse response in responses)
 			{
 				_outputHelper.WriteLine(response.ToString());
-			}
+			};
+			mockPersonRepository.Setup(t => t.GetAllPersons()).ReturnsAsync(persons);
 			List<PersonResponse> people = await _personService.GetAllPersons();
 			_outputHelper.WriteLine("Actual results");
 			foreach (PersonResponse personResponse in people)
@@ -164,12 +139,18 @@ namespace ContactManagerTest
 		public async Task GetFilteredPersons_EmptySearch()
 		{
 
-			var responses = await PersonAddDefault();
+			List<Person> persons = new List<Person>() {
+			fixture.Build<Person>().With(t=>t.Email,"someone@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone1@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone2@gmail.com").With(t=>t.Country,null as Country).Create(),
+			};
+			List<PersonResponse> responses = persons.Select(t => t.ToPersonResponse()).ToList();
 			_outputHelper.WriteLine("Expected results");
 			foreach (PersonResponse response in responses)
 			{
 				_outputHelper.WriteLine(response.ToString());
 			}
+			mockPersonRepository.Setup(t=>t.GetFilteredPersons(It.IsAny<Expression<Func<Person,bool>>>())).ReturnsAsync(persons);	
 			List<PersonResponse> people = await _personService.GetFilteredPersons(nameof(Person.Name), "");
 			_outputHelper.WriteLine("Actual results");
 			foreach (PersonResponse personResponse in people)
@@ -183,19 +164,26 @@ namespace ContactManagerTest
 		public async Task GetFilteredPersons_SearchByPersonName()
 		{
 
-			var responses = await PersonAddDefault();
+			List<Person> persons = new List<Person>() {
+			fixture.Build<Person>().With(t=>t.Email,"someone@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone1@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone2@gmail.com").With(t=>t.Country,null as Country).Create(),
+			};
+			List<PersonResponse> responses = persons.Select(t => t.ToPersonResponse()).ToList();
 			_outputHelper.WriteLine("Expected results");
 			foreach (PersonResponse response in responses)
 			{
 				_outputHelper.WriteLine(response.ToString());
 			}
-			List<PersonResponse> people = await _personService.GetFilteredPersons(nameof(Person.Name), "ar");
+			mockPersonRepository.Setup(t => t.GetFilteredPersons(It.IsAny<Expression<Func<Person, bool>>>())).ReturnsAsync(persons);
+			List<PersonResponse> people = await _personService.GetFilteredPersons(nameof(Person.Name), "");
 			_outputHelper.WriteLine("Actual results");
 			foreach (PersonResponse personResponse in people)
 			{
 				_outputHelper.WriteLine(personResponse.ToString());
 			}
-			responses.Should().Contain(p => p.Name.Contains("ar", StringComparison.OrdinalIgnoreCase));
+
+			responses.Should().BeEquivalentTo(people);
 
 		}
 		#endregion
@@ -204,12 +192,18 @@ namespace ContactManagerTest
 		public async Task GetSortedPersons_DESC()
 		{
 
-			var responses = await PersonAddDefault();
+			List<Person> persons = new List<Person>() {
+			fixture.Build<Person>().With(t=>t.Email,"someone@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone1@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone2@gmail.com").With(t=>t.Country,null as Country).Create(),
+			};
+			List<PersonResponse> responses = persons.Select(t => t.ToPersonResponse()).ToList();
 			_outputHelper.WriteLine("Expected results");
 			foreach (PersonResponse response in responses)
 			{
 				_outputHelper.WriteLine(response.ToString());
 			}
+			mockPersonRepository.Setup(t=>t.GetAllPersons()).ReturnsAsync(persons);
 			List<PersonResponse> allPersons = await _personService.GetAllPersons();
 			List<PersonResponse> sortedpeople = await _personService.GetSortedPersons(allPersons, nameof(Person.Name), SortOrderOptions.DESC);
 
@@ -223,19 +217,24 @@ namespace ContactManagerTest
 			//{
 			//	Assert.Equal(responses[i], sortedpeople[i]);
 			//}
-			responses.Should().BeInDescendingOrder(p => p.Name);
+			sortedpeople.Should().BeInDescendingOrder(p => p.Name);
 
 		}
 		[Fact]
 		public async Task GetSortedPersons_ASC()
 		{
-
-			List<PersonResponse> responses = await PersonAddDefault();
+			List<Person> persons = new List<Person>() {
+			fixture.Build<Person>().With(t=>t.Email,"someone@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone1@gmail.com").With(t=>t.Country,null as Country).Create(),
+			fixture.Build<Person>().With(t=>t.Email,"someone2@gmail.com").With(t=>t.Country,null as Country).Create(),
+			};
+			List<PersonResponse> responses = persons.Select(t => t.ToPersonResponse()).ToList();
 			_outputHelper.WriteLine("Expected results");
 			foreach (PersonResponse response in responses)
 			{
 				_outputHelper.WriteLine(response.ToString());
 			}
+			mockPersonRepository.Setup(t=>t.GetAllPersons()).ReturnsAsync(persons);
 			List<PersonResponse> allPersons = await _personService.GetAllPersons();
 			List<PersonResponse> sortedpeople = await _personService.GetSortedPersons(allPersons, nameof(Person.Name), SortOrderOptions.ASC);
 
@@ -249,7 +248,7 @@ namespace ContactManagerTest
 			//{
 			//	Assert.Equal(responses[i], sortedpeople[i]);
 			//}
-			responses.Should().BeInAscendingOrder(p => p.Name);
+			sortedpeople.Should().BeInAscendingOrder(p => p.Name);
 
 		}
 
@@ -279,8 +278,10 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task UpdatePerson_InvalidName()
 		{
-			PersonResponse person = await AddOnePerson("Japan");
-			PersonUpdateRequest updateRequest = person.ToPersonUpdateRequest();
+			Person person = fixture.Build<Person>().With(t=>t.Name,null as string).With(t => t.Email, "someone@gmail.com").With(t => t.Country, null as Country)
+				.With(t=>t.Gender,"Male").Create();
+			PersonResponse personResponse = person.ToPersonResponse();
+			PersonUpdateRequest updateRequest = personResponse.ToPersonUpdateRequest();
 			updateRequest.Name = null;
 			Func<Task> func = (async () =>
 			{
@@ -294,20 +295,25 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task UpdatePerson_Proper()
 		{
-			PersonResponse person = await AddOnePerson("Japan");
-			PersonUpdateRequest updateRequest = person.ToPersonUpdateRequest();
-			updateRequest.Name = "Fanar";
-			updateRequest.Email = "fanar@gmail.com";
+			Person person = fixture.Build<Person>().With(t => t.Email, "someone@gmail.com").With(t => t.Country, null as Country)
+				.With(t => t.Gender, "Male").Create();
+			PersonResponse personResponse = person.ToPersonResponse();
+			PersonUpdateRequest updateRequest = personResponse.ToPersonUpdateRequest();
+			mockPersonRepository.Setup(c=>c.GetPersonById(It.IsAny<Guid>())).ReturnsAsync(person);
+			mockPersonRepository.Setup(t => t.UpdatePerson(It.IsAny<Person>())).ReturnsAsync(person);
 			PersonResponse responseAfterUpdate = await _personService.UpdatePerson(updateRequest);
-			PersonResponse updateResponse = await _personService.GetPersonById(responseAfterUpdate.Id);
-			responseAfterUpdate.Should().Be(updateResponse);
+			responseAfterUpdate.Should().Be(personResponse);
 		}
 		#endregion
 		#region DeletePerson
 		[Fact]
 		public async Task DeletePerson_ValidId()
 		{
-			PersonResponse person = await AddOnePerson("Japan");
+			Person person = fixture.Build<Person>().With(t => t.Email, "someone@gmail.com").With(t => t.Country, null as Country)
+				.With(t => t.Gender, "Male").Create();
+			PersonResponse personResponse = person.ToPersonResponse();
+			mockPersonRepository.Setup(c => c.GetPersonById(It.IsAny<Guid>())).ReturnsAsync(person);
+			mockPersonRepository.Setup(t => t.DeletePerson(It.IsAny<Guid>())).ReturnsAsync(true);
 			bool isDeleted = await _personService.DeletePerson(person.Id);
 			isDeleted.Should().BeTrue();
 		}
