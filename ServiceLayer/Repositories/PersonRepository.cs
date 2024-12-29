@@ -2,6 +2,7 @@
 using DataLayer.Interfaces;
 using EntityLayer.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,10 +15,12 @@ namespace DataLayer.Repositories
 	public class PersonRepository : IPersonRepository
 	{
 		private readonly AppDbContext _appDbContext;
+		private readonly ILogger<PersonRepository> _logger;
 
-		public PersonRepository(AppDbContext appDbContext)
+		public PersonRepository(AppDbContext appDbContext, ILogger<PersonRepository> logger)
 		{
 			_appDbContext = appDbContext;
+			_logger = logger;
 		}
 
 		public async Task<Person> AddPerson(Person person)
@@ -46,6 +49,7 @@ namespace DataLayer.Repositories
 
 		public async Task<List<Person>> GetFilteredPersons(Expression<Func<Person, bool>> predicate)
 		{
+			_logger.LogInformation("GetFilteredPersons of PersonRepository");
 			return await _appDbContext.Persons.Include(p => p.Country).Where(predicate).ToListAsync();
 		}
 

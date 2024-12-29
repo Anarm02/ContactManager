@@ -13,17 +13,22 @@ namespace ContactManager.Controllers
 	{
 		private readonly IPersonService _personService;
 		private readonly ICountryService _countryService;
+		private readonly ILogger<PersonsController> _logger;
+		
 
-		public PersonsController(IPersonService personService, ICountryService countryService)
+		public PersonsController(IPersonService personService, ICountryService countryService, ILogger<PersonsController> logger)
 		{
 			_personService = personService;
 			_countryService = countryService;
+			_logger = logger;
 		}
 
 		[Route("persons/Index")]
 		[Route("/")]
 		public async Task<IActionResult> Index(string searchBy, string? searchString, string sortBy = nameof(PersonResponse.Name), SortOrderOptions sortOrder = SortOrderOptions.ASC)
 		{
+			_logger.LogInformation("Index method of persons controller");
+			_logger.LogDebug($"searchBy:{searchBy},searchString:{searchString},sortBy:{sortBy},sortOrder:{sortOrder}");
 			ViewBag.fields = new Dictionary<string, string>() {
 				{nameof(PersonResponse.Name),"Person Name" },
 				{nameof(PersonResponse.Email),"Email" },

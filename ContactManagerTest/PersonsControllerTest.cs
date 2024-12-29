@@ -6,8 +6,11 @@ using EntityLayer.DTOs.Persons;
 using EntityLayer.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OfficeOpenXml.Sorting;
+using Serilog;
+using Serilog.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +39,8 @@ namespace ContactManagerTest
 		[Fact]
 		public async Task Index_Valid()
 		{
-			PersonsController personsController=new PersonsController(personService,countryService);
+			var loggerMock = new Mock<ILogger<PersonsController>>();
+			PersonsController personsController=new PersonsController(personService,countryService,loggerMock.Object);
 			List<PersonResponse> responses=fixture.Create<List<PersonResponse>>();
 			personServiceMock.Setup(t => t.GetFilteredPersons(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(responses);
 			personServiceMock.Setup(t => t.GetSortedPersons(It.IsAny<List<PersonResponse>>(), It.IsAny<string>(), It.IsAny<SortOrderOptions>())).ReturnsAsync(responses);
@@ -54,7 +58,8 @@ namespace ContactManagerTest
 			PersonAddRequest request=fixture.Create<PersonAddRequest>();
 			PersonResponse response=fixture.Create<PersonResponse>();
 			List<CountryAddResponse> countries=fixture.Create<List<CountryAddResponse>>();
-			PersonsController personsController = new PersonsController(personService, countryService);
+			var loggerMock = new Mock<ILogger<PersonsController>>();
+			PersonsController personsController = new PersonsController(personService, countryService, loggerMock.Object);
 			countryServiceMock.Setup(t=>t.GetAllCountries()).ReturnsAsync(countries);
 			personServiceMock.Setup(t=>t.AddPerson(It.IsAny<PersonAddRequest>())).ReturnsAsync(response);
 			personsController.ModelState.AddModelError("Email", "Name can't be empty");
@@ -70,7 +75,8 @@ namespace ContactManagerTest
 			PersonAddRequest request = fixture.Create<PersonAddRequest>();
 			PersonResponse response = fixture.Create<PersonResponse>();
 			List<CountryAddResponse> countries = fixture.Create<List<CountryAddResponse>>();
-			PersonsController personsController = new PersonsController(personService, countryService);
+			var loggerMock = new Mock<ILogger<PersonsController>>();
+			PersonsController personsController = new PersonsController(personService, countryService, loggerMock.Object);
 			countryServiceMock.Setup(t => t.GetAllCountries()).ReturnsAsync(countries);
 			personServiceMock.Setup(t => t.AddPerson(It.IsAny<PersonAddRequest>())).ReturnsAsync(response);
 			IActionResult result = await personsController.Create(request);
