@@ -2,9 +2,22 @@
 @{
     ViewBag.Title = "Edit Person";
 }
+<div class="flex">
+    <div class="flex-1">
+        <div class="text-grey">
+            <span class="text-grey">Contacts</span>
+            <i class="fa-solid fa-caret-right"></i>
+            <span class="text-grey">People</span>
+            <i class="fa-solid fa-caret-right"></i>
+            <span class="text-grey">Create</span>
+        </div>
+    </div>
+</div>
 <a asp-controller="Persons" asp-action="Index" class="link-hover">Persons List</a>
 <h2>Edit Person</h2>
-<div class="w-50">
+<div class="form-container">
+    <a asp-controller="Persons" asp-action="Index" class="link-hover">Persons List</a>
+    <h2 class="text-large">Edit Person</h2>
     <form asp-controller="persons" asp-action="edit" method="post">
         <input type="hidden" asp-for="Id" />
         <div class="form-field flex">

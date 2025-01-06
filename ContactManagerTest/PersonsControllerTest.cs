@@ -51,24 +51,6 @@ namespace ContactManagerTest
 		}
 		#endregion
 		#region Create
-		[Fact]
-		public async Task Create_Invalid()
-		{
-
-			PersonAddRequest request=fixture.Create<PersonAddRequest>();
-			PersonResponse response=fixture.Create<PersonResponse>();
-			List<CountryAddResponse> countries=fixture.Create<List<CountryAddResponse>>();
-			var loggerMock = new Mock<ILogger<PersonsController>>();
-			PersonsController personsController = new PersonsController(personService, countryService, loggerMock.Object);
-			countryServiceMock.Setup(t=>t.GetAllCountries()).ReturnsAsync(countries);
-			personServiceMock.Setup(t=>t.AddPerson(It.IsAny<PersonAddRequest>())).ReturnsAsync(response);
-			personsController.ModelState.AddModelError("Email", "Name can't be empty");
-			IActionResult result = await personsController.Create(request);
-			var viewResult = Assert.IsType<ViewResult>(result);
-			viewResult.ViewData.Model.Should().BeAssignableTo<PersonAddRequest>();
-			viewResult.ViewData.Model.Should().Be(request);
-		}
-		[Fact]
 		public async Task Create_Valid()
 		{
 

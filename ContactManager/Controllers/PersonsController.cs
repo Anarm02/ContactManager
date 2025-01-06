@@ -6,9 +6,12 @@ using Rotativa.AspNetCore;
 using Rotativa.AspNetCore.Options;
 using DataLayer.Interfaces;
 using EntityLayer.DTOs.Countries;
+using ContactManager.Filters.ActionFilters;
+using ContactManager.Filters.ResultFilters;
 
 namespace ContactManager.Controllers
 {
+	[TypeFilter(typeof(ResponseHeaderActionFilter), Arguments = new object[] { "Custom-Key-Controller", "Custom-Value-Controller" ,3})]
 	public class PersonsController : Controller
 	{
 		private readonly IPersonService _personService;
@@ -25,28 +28,22 @@ namespace ContactManager.Controllers
 
 		[Route("persons/Index")]
 		[Route("/")]
+		[PersonsListActionFilterFactory]
+		[TypeFilter(typeof(ResponseHeaderActionFilter),Arguments =new object[] {"Custom-Key","Custom-Value",1})]
+		[TypeFilter(typeof(PersonsListResultFilter))]
 		public async Task<IActionResult> Index(string searchBy, string? searchString, string sortBy = nameof(PersonResponse.Name), SortOrderOptions sortOrder = SortOrderOptions.ASC)
 		{
 			_logger.LogInformation("Index method of persons controller");
 			_logger.LogDebug($"searchBy:{searchBy},searchString:{searchString},sortBy:{sortBy},sortOrder:{sortOrder}");
-			ViewBag.fields = new Dictionary<string, string>() {
-				{nameof(PersonResponse.Name),"Person Name" },
-				{nameof(PersonResponse.Email),"Email" },
-				{nameof(PersonResponse.BirthDate),"Date of birth" },
-				{nameof(PersonResponse.Address),"Address" },
-				{nameof(PersonResponse.CountryId),"Country" },
-				{nameof(PersonResponse.Gender),"Gender" },
-			};
-			ViewBag.sb = searchBy;
-			ViewBag.ss = searchString;
+			
 			List<PersonResponse> responses = await _personService.GetFilteredPersons(searchBy, searchString);
 			List<PersonResponse> sortedPersons = await _personService.GetSortedPersons(responses, sortBy, sortOrder);
-			ViewBag.sortBy = sortBy;
-			ViewBag.sortOrder = sortOrder.ToString();
 			return View(sortedPersons);
 		}
 		[Route("persons/create")]
 		[HttpGet]
+	
+
 		public async Task<IActionResult> Create()
 		{
 			List<CountryAddResponse> countries = await _countryService.GetAllCountries();
@@ -56,14 +53,9 @@ namespace ContactManager.Controllers
 		}
 		[Route("persons/create")]
 		[HttpPost]
+		[TypeFilter(typeof(PersonCreateAndEditActionFilter))]
 		public async Task<IActionResult> Create(PersonAddRequest request)
 		{
-			if (!ModelState.IsValid)
-			{
-				ViewBag.Countries = await _countryService.GetAllCountries();
-				ViewBag.Errors = ModelState.Values.SelectMany(x => x.Errors).SelectMany(x => x.ErrorMessage).ToList();
-				return View(request);
-			}
 			await _personService.AddPerson(request);
 			return RedirectToAction("Index");
 		}
@@ -80,22 +72,13 @@ namespace ContactManager.Controllers
 		}
 		[HttpPost]
 		[Route("persons/edit/{Id}")]
+		[TypeFilter(typeof(PersonCreateAndEditActionFilter))]
 		public async Task<IActionResult> Edit(PersonUpdateRequest request)
 		{
 			PersonResponse person = await _personService.GetPersonById(request.Id);
 			if (person == null)
 			{
 				return RedirectToAction("Index");
-			}
-			if (!ModelState.IsValid)
-			{
-				var countries = await _countryService.GetAllCountries();
-				ViewBag.Countries = countries.Select(c =>
-				new SelectListItem { Text = c.Name, Value = c.Id.ToString() }).ToList();
-				var result = await _personService.GetPersonById(request.Id);
-				PersonUpdateRequest req = result.ToPersonUpdateRequest();
-				return View(request);
-
 			}
 			var updatedResult = await _personService.UpdatePerson(request);
 			return RedirectToAction("Index");

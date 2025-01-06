@@ -5,6 +5,8 @@ using DataLayer.Interfaces;
 using DataLayer.Services;
 using DataLayer.Repositories;
 using Serilog;
+using ContactManager.Filters.ActionFilters;
+using ContactManager.StartupExtensions;
 namespace ContactManager
 {
 	public class Program
@@ -22,16 +24,7 @@ namespace ContactManager
 			{
 				opt.LoggingFields = Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.RequestProperties | Microsoft.AspNetCore.HttpLogging.HttpLoggingFields.ResponsePropertiesAndHeaders;
 			});
-
-			builder.Services.AddControllersWithViews();
-			builder.Services.AddScoped<ICountryRepository, CountryRepository>();
-			builder.Services.AddScoped<IPersonRepository, PersonRepository>();
-			builder.Services.AddScoped<ICountryService, CountryService>();
-			builder.Services.AddScoped<IPersonService, PersonService>();
-			builder.Services.AddDbContext<AppDbContext>(opt =>
-			{
-				opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-			});
+			builder.Services.ConfigureServices(builder.Configuration);
 
 			var app = builder.Build();
 			if (app.Environment.IsDevelopment())
