@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Entities\EntityLayer.csproj" />
+    <ProjectReference Include="..\Exceptions\Exceptions.csproj" />
     <ProjectReference Include="..\ServiceLayer\DataLayer.csproj" />
   </ItemGroup>
 

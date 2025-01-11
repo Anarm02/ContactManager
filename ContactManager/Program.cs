@@ -7,6 +7,7 @@ using DataLayer.Repositories;
 using Serilog;
 using ContactManager.Filters.ActionFilters;
 using ContactManager.StartupExtensions;
+using ContactManager.Middlewares;
 namespace ContactManager
 {
 	public class Program
@@ -28,8 +29,17 @@ namespace ContactManager
 
 			var app = builder.Build();
 			if (app.Environment.IsDevelopment())
-				app.UseDeveloperExceptionPage();
+			{
 
+				app.UseDeveloperExceptionPage();
+			}
+			else
+			{
+				app.UseExceptionHandler("/Error");
+				app.UseExceptionHandlingMiddleware();
+			}
+			app.UseHsts();
+			app.UseHttpsRedirection();
 			// Use HttpLogging
 			app.UseHttpLogging();
 			app.UseSerilogRequestLogging();
@@ -39,7 +49,22 @@ namespace ContactManager
 
 			app.UseStaticFiles();
 			app.UseRouting();
+			app.UseAuthentication();
+			app.UseAuthorization();
 			app.MapControllers();
+			app.UseEndpoints(endpoints =>
+			{
+				endpoints.MapControllerRoute(
+					name:"areas",
+					pattern:"{area}/{controller}/{action}/{id?}"
+					);
+				endpoints.MapControllerRoute(
+					name: "default",
+					pattern: "{controller}/{action}/{id?}"
+					);
+				
+			}
+			);
 
 			app.Run();
 		}

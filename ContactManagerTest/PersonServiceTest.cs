@@ -19,7 +19,6 @@ using Xunit.Abstractions;
 using Moq;
 using System.Linq.Expressions;
 using Xunit.Sdk;
-
 namespace ContactManagerTest
 {
 	public class PersonServiceTest

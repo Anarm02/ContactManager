@@ -18,14 +18,45 @@
                             Contact Manager
                         </h1>
                     </div>
-                    <div class="flex-1 pr">
+                    <div class="flex-1 pr" id="search-box-div">
                         <div class="navbar account-links">
-
+                            <ul>
+                                <li>@User.Identity?.Name</li>
+                            </ul>
 
                             <ul>
                                 <li>
-                                    <a asp-controller="Account" asp-action="Register">Register</a>
-                                    <a asp-controller="Account" asp-action="Login">Login</a>
+                                    @if (!User.Identity.IsAuthenticated)
+                                    {
+
+
+                                        @if (ViewBag.CurrentUrl == "~/Account/Register")
+                                        {
+                                            <a asp-controller="Account" asp-action="Register" class="nav-active">Register</a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Account" asp-action="Register">Register</a>
+                                        }
+                                        @if (ViewBag.CurrentUrl == "~/Account/Login")
+                                        {
+                                            <a asp-controller="Account" asp-action="Login" class="nav-active">Login</a>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Account" asp-action="Login">Login</a>
+                                        }
+                                    }
+                                    else
+                                    {
+
+
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                        <a asp-area="Admin" asp-controller="Home" asp-action="Index">Admin Panel</a>
+                                        }
+                                            <a asp-controller="Account" asp-action="Logout">Logout</a>
+                                    }
                                 </li>
                             </ul>
                         </div>
@@ -34,11 +65,27 @@
             </div>
             <div class="navbar mb">
 
-                
+
                 <ul>
                     <li>
-                        <a asp-controller="Persons" asp-action="Index">Persons</a>
-                        <a asp-controller="Countries" asp-action="UploadFromExcel">Countries</a>
+                        @if (ViewBag.CurrentUrl == "~/Persons/Index")
+                        {
+                            <a asp-controller="Persons" asp-action="Index" class="nav-active">Persons</a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Persons" asp-action="Index">Persons</a>
+                        }
+                        @if (ViewBag.CurrentUrl == "~/Countries/UploadFromExcel")
+                        {
+                            <a asp-controller="Countries" asp-action="UploadFromExcel" class="nav-active">Countries</a>
+                        }
+                        else
+                        {
+                            <a asp-controller="Countries" asp-action="UploadFromExcel">Countries</a>
+                        }
+
+
                     </li>
                 </ul>
             </div>
@@ -47,6 +94,6 @@
             </div>
         </div>
     </div>
-    @RenderSection("scripts",required:false)
+    @RenderSection("scripts", required: false)
 </body>
 </html>

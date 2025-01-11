@@ -1,28 +1,20 @@
-﻿@model PersonAddRequest
+﻿@model RegisterDto
 @{
-    ViewBag.Title = "Create Person";
-    ViewBag.CurrentUrl = "~/Persons/Create";
+    ViewBag.Title = "Register";
+    ViewBag.CurrentUrl = "~/Account/Register";
 }
-<div class="flex">
-    <div class="flex-1">
-        <div class="text-grey">
-            <span class="text-grey">Contacts</span>
-            <i class="fa-solid fa-caret-right"></i>
-            <span class="text-grey">People</span>
-            <i class="fa-solid fa-caret-right"></i>
-            <span class="text-grey">Create</span>
-        </div>
-    </div>
+<div class="text-grey">
+    <span>Contacts</span>
+    <i class="fa-solid fa-caret-right"></i>
+    <span>Register</span>
 </div>
-
 <div class="form-container">
-    <a asp-controller="Persons" asp-action="Index" class="link-hover">Persons List</a>
-    <h2 class="text-large">Create Person</h2>
-    <form asp-controller="Persons" asp-action="Create" method="post">
+    Already Registered? <a asp-controller="Account" asp-action="Login" class="link-hover">Login</a>
+    <h2 class="text-large">Register</h2>
+    <form asp-controller="Account" asp-action="Register" method="post">
         <div class="form-field flex">
             <div class="w-25">
-                <label class="form-label pt" asp-for="Name">Person Name</label>
-
+                <label asp-for="Name" class="form-label pt">Name</label>
             </div>
             <div class="flex-1">
                 <input asp-for="Name" class="form-input" />
@@ -31,67 +23,57 @@
         </div>
         <div class="form-field flex">
             <div class="w-25">
-                <label class="form-label pt" asp-for="Email">Email</label>
+                <label asp-for="Email" class="form-label pt">Email</label>
             </div>
             <div class="flex-1">
-                <input asp-for="Email" type="email" class="form-input" />
+                <input asp-for="Email" class="form-input" />
                 <span asp-validation-for="Email" class="text-red"></span>
             </div>
         </div>
         <div class="form-field flex">
             <div class="w-25">
-                <label class="form-label pt" asp-for="BirthDate">Date of Birth</label>
+                <label asp-for="Phone" class="form-label pt">Phone</label>
             </div>
             <div class="flex-1">
-                <input asp-for="BirthDate" type="date" class="form-input" />
+                <input asp-for="Phone" class="form-input" />
+                <span asp-validation-for="Phone" class="text-red"></span>
             </div>
         </div>
         <div class="form-field flex">
             <div class="w-25">
-                <label class="form-label pt">Gender</label>
+                <label asp-for="Password" class="form-label pt">Password</label>
             </div>
             <div class="flex-1">
-                @{
-                    var genders = (string[])Enum.GetNames(typeof(GenderOptions));
-                }
-                @foreach (var gender in genders)
-                {
-                    <input asp-for="Gender" type="radio" value="@gender" class="ml" />
-                    <label asp-for="@gender">@gender</label>
-                }
-
-
+                <input asp-for="Password" class="form-input" />
+                <span asp-validation-for="Password" class="text-red"></span>
             </div>
         </div>
         <div class="form-field flex">
             <div class="w-25">
-                <label class="form-label pt" asp-for="CountryId">Country</label>
+                <label asp-for="ConfirmPassword" class="form-label pt">Confirm Password</label>
             </div>
             <div class="flex-1">
-                <select asp-for="CountryId" class="form-input" asp-items="@ViewBag.Countries">
-                </select>
+                <input asp-for="ConfirmPassword" class="form-input" />
+                <span asp-validation-for="ConfirmPassword" class="text-red"></span>
             </div>
         </div>
         <div class="form-field flex">
             <div class="w-25">
-                <label class="form-label pt" asp-for="Address">Address</label>
+                <label asp-for="UserType" class="form-label pt">User type</label>
             </div>
             <div class="flex-1">
-                <textarea asp-for="Address" class="form-input"></textarea>
+                <input type="radio" asp-for="UserType" value=@UserTypeOptions.User.ToString()  checked/>
+                <label>User</label>
+                <input type="radio" asp-for="UserType" value=@UserTypeOptions.Admin.ToString()  />
+                <label>Admin</label>
             </div>
         </div>
         <div class="form-field flex">
             <div class="w-25">
             </div>
             <div class="flex-1">
-                <input asp-for="ReceiveNewsLetters" value="true" />
-                <label asp-for="ReceiveNewsLetters" class="form-label">Receive News Letters</label>
-            </div>
-        </div>
-        <div class="form-field flex">
-            <div class="w-25"></div>
-            <div class="flex-1">
-                <button class="button-green-back button">Create</button>
+                <button type="submit" class="button button-green-back">Register</button>
+                <div asp-validation-summary="All" class="text-red"></div>
                 @if (ViewBag.Errors != null)
                 {
                     <div class="text-red ml">
@@ -100,9 +82,7 @@
                             {
                                 <li class="ml">@error</li>
                             }
-
                         </ul>
-
                     </div>
                 }
             </div>

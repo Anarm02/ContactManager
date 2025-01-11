@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using SerilogTimings;
+using Exceptions;
 
 namespace DataLayer.Services
 {
@@ -143,7 +144,8 @@ namespace DataLayer.Services
 		{
 			if (request == null) throw new ArgumentNullException(nameof(request));
 			ValidationHelper.ModelValidation(request);
-			Person person=request.ToPerson();
+			Person person=await _repository.GetPersonById(request.Id);
+			if(person==null) throw new InvalidPersonIdException("There is no person with given id");
 			await _repository.UpdatePerson(person);
 			return person.ToPersonResponse();
 		}

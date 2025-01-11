@@ -1,4 +1,5 @@
 ﻿using EntityLayer.Entities;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace DataLayer.Context
 {
-	public class AppDbContext:DbContext
+	public class AppDbContext:IdentityDbContext<User,Role,Guid>
 	{
         public AppDbContext(DbContextOptions opt):base(opt)
         {
